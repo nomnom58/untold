@@ -185,6 +185,9 @@ const AdminScreen: React.FC = () => {
       if (storedUntil && parseInt(storedUntil, 10) > Date.now()) {
         setIsUnlocked(true);
         fetchDataOnly();
+      } else if (storedUntil) {
+        localStorage.removeItem(ADMIN_UNLOCK_KEY);
+        localStorage.removeItem(ADMIN_INTENT_KEY);
       }
     };
     checkUnlockStatus();
@@ -269,14 +272,19 @@ const AdminScreen: React.FC = () => {
 
   const handleUnlock = () => {
     const trimmed = passcode.trim();
-    const secret = (process.env as any).ADMIN_PASSCODE;
+    const secret = import.meta.env.VITE_ADMIN_PASSCODE as string | undefined;
     const hasInternalWhitespace = /\s/.test(trimmed);
     
     // Validate format first: min 8 characters and no internal spaces
     const passesFormat = trimmed.length >= 8 && !hasInternalWhitespace;
     
+    if (!secret) {
+      setLastError("Admin passcode is not configured.");
+      return;
+    }
+
     // Strictly require and match the environment variable ADMIN_PASSCODE
-    const isValid = passesFormat && secret && trimmed === secret;
+    const isValid = passesFormat && trimmed === secret;
 
     if (isValid) {
       const expiration = Date.now() + ADMIN_TTL_MS;

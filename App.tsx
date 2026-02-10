@@ -1,6 +1,6 @@
 
 import React, { useEffect, useRef } from 'react';
-import { HashRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Header from './components/Header';
 import Home from './components/Home';
 import WriteScreen from './components/WriteScreen';
@@ -12,14 +12,9 @@ const ANON_ID_KEY = 'untold_anon_id';
 
 const AppContent: React.FC = () => {
   const location = useLocation();
-  const navigate = useNavigate();
-  
   // SESSION METRICS: In-memory only
   const sessionIdRef = useRef<string>(crypto.randomUUID?.() || Math.random().toString(36).substring(2));
   const hasLoggedEndRef = useRef<boolean>(false);
-
-  // Identify if we are on the admin path to isolate rendering
-  const isAdminPath = location.pathname === '/2-hon-dai-tim-tai' || location.pathname === '/admin';
 
   // ANONYMOUS TRACKING LOGIC
   useEffect(() => {
@@ -63,28 +58,24 @@ const AppContent: React.FC = () => {
     };
   }, []);
 
-  if (isAdminPath) {
-    return (
-      <Routes>
-        <Route path="/2-hon-dai-tim-tai" element={<AdminScreen />} />
-        <Route path="/admin" element={<Navigate to="/2-hon-dai-tim-tai" replace />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    );
-  }
+  const isAdminRoute = ['/2-hon-dai-tim-tai', '/admin'].some((path) =>
+    location.pathname.startsWith(path)
+  );
 
   return (
     <div 
       className="w-full h-[100dvh] max-h-[100dvh] fixed inset-0 touch-none overflow-hidden flex flex-col"
       style={{ backgroundImage: 'url(/bg.png)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}
     >
-      <Header />
+      {!isAdminRoute && <Header />}
       
       <main className="relative flex-1 h-0 min-h-0 overflow-hidden">
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/write" element={<WriteScreen onPost={() => {}} />} />
           <Route path="/your-posts" element={<YourPosts />} />
+          <Route path="/2-hon-dai-tim-tai" element={<AdminScreen />} />
+          <Route path="/admin" element={<Navigate to="/2-hon-dai-tim-tai" replace />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
