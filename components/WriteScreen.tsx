@@ -32,6 +32,8 @@ const WriteScreen: React.FC<WriteScreenProps> = ({ onPost }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSafetyBlocked, setIsSafetyBlocked] = useState(false);
   const [receipt, setReceipt] = useState<any>(null);
+  const [isTitleLimitReached, setIsTitleLimitReached] = useState(false);
+  const [dismissTitleLimitWarning, setDismissTitleLimitWarning] = useState(false);
   
   // Notice Popup State
   const [isNoticeOpen, setIsNoticeOpen] = useState(false);
@@ -67,16 +69,49 @@ const WriteScreen: React.FC<WriteScreenProps> = ({ onPost }) => {
 
     const style = window.getComputedStyle(el);
     const lh = parseFloat(style.lineHeight);
-    const maxHeight = Math.ceil(lh * 3);
+    const maxHeight = Math.ceil(lh * 4);
 
     el.style.height = 'auto';
     const currentScrollHeight = el.scrollHeight;
 
     if (currentScrollHeight > maxHeight && title.length > 0) {
-      setTitle(lastValidTitle.current);
+      setIsTitleLimitReached(true);
+      const lines = title.split('\n');
+      let newTitle = title;
+      
+      if (lines.length > 4) {
+        // Truncate based on newlines
+        const clampedLines = lines.slice(0, 4);
+        if (!clampedLines[3].endsWith('...')) {
+          clampedLines[3] = clampedLines[3].trimEnd() + '...';
+        }
+        newTitle = clampedLines.join('\n');
+      } else {
+        // Truncate based on visual wrap height
+        // We prune small chunks from the end until it fits or we hit a safe limit
+        newTitle = title.slice(0, -Math.max(1, Math.floor(title.length * 0.1)));
+        if (!newTitle.endsWith('...')) {
+          newTitle = newTitle.trimEnd() + '...';
+        }
+      }
+
+      if (newTitle !== title) {
+        setTitle(newTitle);
+      }
+      
       el.style.height = 'auto';
       el.style.height = `${Math.min(el.scrollHeight, maxHeight)}px`;
     } else {
+      // Only hide the warning if we are safely below the 4-line limit and not truncated
+      const linesCount = title.split('\n').length;
+      const looksClamped = title.trimEnd().endsWith('...');
+      if (linesCount < 4 && !looksClamped) {
+        setIsTitleLimitReached(false);
+        setDismissTitleLimitWarning(false);
+      } else if (linesCount >= 4 || looksClamped) {
+        setIsTitleLimitReached(true);
+      }
+      
       lastValidTitle.current = title;
       el.style.height = `${currentScrollHeight}px`;
     }
@@ -248,6 +283,9 @@ const WriteScreen: React.FC<WriteScreenProps> = ({ onPost }) => {
   };
 
   const handleTitleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter') {
+      setDismissTitleLimitWarning(true);
+    }
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       contentRef.current?.focus();
@@ -311,16 +349,23 @@ const WriteScreen: React.FC<WriteScreenProps> = ({ onPost }) => {
             </div>
           ) : (
             <>
-              <textarea 
-                ref={titleRef}
-                placeholder="Confession title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                onKeyDown={handleTitleKeyDown}
-                rows={1}
-                disabled={isSubmitting}
-                className={`w-full text-[20px] md:text-[24px] font-[500] border-none focus:ring-0 ${title.length > 0 ? 'text-[#373737]' : 'text-[#373737]/50'} placeholder:text-[#373737]/50 mb-10 outline-none shrink-0 resize-none whitespace-pre-wrap break-words leading-[1.5] transition-[color] duration-200 overflow-hidden`}
-              />
+              <div className="flex flex-col mb-10">
+                <textarea 
+                  ref={titleRef}
+                  placeholder="Confession title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  onKeyDown={handleTitleKeyDown}
+                  rows={1}
+                  disabled={isSubmitting}
+                  className={`w-full text-[20px] md:text-[24px] font-[500] border-none focus:ring-0 ${title.length > 0 ? 'text-[#373737]' : 'text-[#373737]/50'} placeholder:text-[#373737]/50 outline-none shrink-0 resize-none whitespace-pre-wrap break-words leading-[1.5] transition-[color] duration-200 overflow-hidden`}
+                />
+                {isTitleLimitReached && !dismissTitleLimitWarning && (
+                  <p className="text-[#F04438] text-[16px] font-medium mt-2">
+                    You’ve reached the title limit. Press Enter to start a new line.
+                  </p>
+                )}
+              </div>
               
               <textarea 
                 ref={contentRef}

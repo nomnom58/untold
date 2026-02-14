@@ -1,4 +1,4 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.1';
+import { createClient } from '@supabase/supabase-js';
 
 const getEnv = (key: string) => {
   if (typeof process !== 'undefined' && process.env) {
