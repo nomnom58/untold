@@ -34,7 +34,7 @@ const Header: React.FC = () => {
             aria-label="Go to Home"
           >
             <div className="w-auto h-8 flex items-center justify-center">
-              <img src="/logo.png" width={208} height={32} alt="Untold" className="app-logo" />
+              <img src="/logo2.png" width={184} height={32} alt="Untold" className="app-logo" />
             </div>
           </div>
 

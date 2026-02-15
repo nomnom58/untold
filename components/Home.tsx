@@ -483,7 +483,7 @@ const Home: React.FC<{ onIndexChange?: (index: number) => void }> = ({ onIndexCh
         content = (
           <div className="relative w-[550px] max-w-full bg-[#1A1A1A] h-[calc(100dvh-220px)] md:h-[70dvh] confession-card overflow-hidden flex flex-col justify-end p-[20px] mx-auto">
             <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent z-0" />
-            <img src="/logo.png" width={208} height={32} className="relative z-10 mb-[20px]" style={{ width: '208px', maxWidth: '100%', height: 'auto' }} />
+            <img src="/logo2.png" width={208} height={32} className="relative z-10 mb-[20px]" style={{ width: '208px', maxWidth: '100%', height: 'auto' }} />
             <h1 className="relative z-10 text-[32px] md:text-[48px] font-medium text-white leading-tight mb-0">A safe space to share what you’ve never said out loud</h1>
           </div>
         );

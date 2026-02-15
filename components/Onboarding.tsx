@@ -14,7 +14,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
         </div>
         <div className="relative h-full flex flex-col justify-end p-[20px] z-10">
-          <img src="/logo.png?v=onb1" width={208} height={32} className="relative z-10 mb-[20px]" style={{ width: '208px', maxWidth: '100%', height: 'auto' }} />
+          <img src="/logo2.png?v=onb1" width={208} height={32} className="relative z-10 mb-[20px]" style={{ width: '208px', maxWidth: '100%', height: 'auto' }} />
           <h1 className="text-[32px] md:text-[48px] font-medium text-white leading-tight mb-0">A safe space to share what you’ve never said out loud</h1>
           <button 
             onClick={() => setStep(2)}
