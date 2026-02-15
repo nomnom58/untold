@@ -9,7 +9,7 @@ const ADMIN_SESSION_KEY = "admin_key_session";
 
 interface SeedItem {
   id: string;
-  title: string;
+  title: string | null;
   body: string;
 }
 
@@ -382,6 +382,8 @@ const AdminScreen: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [reviewIndex, confessions]);
 
+  const END_DELIMITER = /^\s*\[END\]\s*$/;
+
   const handleParseSeed = () => {
     const raw = rawSeedText.trim();
     if (!raw) {
@@ -390,36 +392,44 @@ const AdminScreen: React.FC = () => {
       return;
     }
 
-    const dashLineRegex = /\n\s*-{2,}\s*(\n|$)/;
-    let blocks: string[] = [];
+    const lines = raw.split('\n');
+    const blocks: string[] = [];
+    let currentBlock: string[] = [];
 
-    if (dashLineRegex.test(raw)) {
-      blocks = raw.split(/\n\s*-{2,}\s*(?:\n|$)/).map(b => b.trim()).filter(b => b.length > 0);
-    } else {
-      blocks = raw.split(/\n\s*\n+/).map(b => b.trim()).filter(b => b.length > 0);
+    for (const line of lines) {
+      if (END_DELIMITER.test(line)) {
+        if (currentBlock.length > 0) {
+          const blockText = currentBlock.join('\n').replace(/\s+$/gm, '').trim();
+          if (blockText.length > 0) blocks.push(blockText);
+          currentBlock = [];
+        }
+      } else {
+        currentBlock.push(line);
+      }
     }
 
-    const parsed = blocks.map((block, i) => {
-      const allLines = block.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-      
-      const contentLines = allLines.filter(line => !line.match(/^(title|body|confession)\s*\d*\s*:?$/i));
+    const parsed = blocks.map((block): SeedItem | null => {
+      const linesInBlock = block.split('\n');
+      const firstNonEmptyIdx = linesInBlock.findIndex(l => l.trim().length > 0);
+      if (firstNonEmptyIdx === -1) return null;
 
-      if (contentLines.length === 0) return null;
-
-      if (contentLines.length >= 2) {
+      const nonEmptyLines = linesInBlock.filter(l => l.trim().length > 0);
+      if (nonEmptyLines.length === 1) {
         return {
           id: Math.random().toString(36).substring(2),
-          title: contentLines[0],
-          body: contentLines.slice(1).join('\n')
-        };
-      } else {
-        return {
-          id: Math.random().toString(36).substring(2),
-          title: '', 
-          body: contentLines[0]
+          title: null,
+          body: nonEmptyLines[0]
         };
       }
-    }).filter(Boolean) as SeedItem[];
+
+      const title = linesInBlock[firstNonEmptyIdx].trim();
+      const body = linesInBlock.slice(firstNonEmptyIdx + 1).join('\n').trim();
+      return {
+        id: Math.random().toString(36).substring(2),
+        title,
+        body
+      };
+    }).filter((item): item is SeedItem => item !== null);
 
     setSeedItems(parsed);
     setSeederReceipt({ 
@@ -436,7 +446,7 @@ const AdminScreen: React.FC = () => {
     setIsSeeding(true);
     try {
       const payload = seedItems.map(item => ({
-        title: item.title.trim() || null,
+        title: (item.title ?? '').trim() || null,
         body: item.body.trim()
       }));
 
@@ -724,10 +734,11 @@ const AdminScreen: React.FC = () => {
             ) : (
               <>
                 <div className="bg-gray-50 p-8 rounded-[40px] border border-black/5">
+                  <p className="text-[12px] font-medium text-black/50 mb-2">Use [END] on its own line to finish each entry.</p>
                   <textarea 
                     value={rawSeedText}
                     onChange={(e) => setRawSeedText(e.target.value)}
-                    placeholder="Title 1&#10;Body 1...&#10;--&#10;Title 2&#10;Body 2..."
+                    placeholder="Title (optional)&#10;Body line 1...&#10;&#10;Body line 2...&#10;[END]&#10;&#10;Next confession...&#10;[END]"
                     className="w-full h-64 p-6 border-2 border-black/10 rounded-3xl font-mono text-[14px] focus:border-black outline-none mb-6 resize-none custom-scrollbar bg-white shadow-inner"
                   />
                   <div className="flex items-center gap-4">
