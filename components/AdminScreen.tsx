@@ -635,7 +635,8 @@ const AdminScreen: React.FC = () => {
                   <p className="text-[12px] font-bold text-black/40 uppercase tracking-widest">App Opens</p>
                   <span className="text-[10px] text-black/30 cursor-help">ⓘ</span>
                   <div className="absolute bottom-full left-0 mb-2 hidden group-hover/tooltip:block bg-black text-white text-[13px] px-3 py-2 rounded-lg whitespace-nowrap z-[110] shadow-xl pointer-events-none font-normal tracking-normal">
-                    Sessions from {metricsDateFrom} to {metricsDateTo}.
+                    <div>Số lần người dùng bắt đầu một phiên truy cập (session).</div>
+                    <div>Dù user xem 10 confession trong 1 lần vào app → vẫn chỉ tính 1 App Open.</div>
                   </div>
                 </div>
                 <p className="text-4xl font-black">{metrics.sessions}</p>
@@ -645,7 +646,8 @@ const AdminScreen: React.FC = () => {
                   <p className="text-[12px] font-bold text-black/40 uppercase tracking-widest">Confession Views</p>
                   <span className="text-[10px] text-black/30 cursor-help">ⓘ</span>
                   <div className="absolute bottom-full left-0 mb-2 hidden group-hover/tooltip:block bg-black text-white text-[13px] px-3 py-2 rounded-lg whitespace-nowrap z-[110] shadow-xl pointer-events-none font-normal tracking-normal">
-                    Views from {metricsDateFrom} to {metricsDateTo}.
+                    <div>Số lượt confession thực sự được hiển thị trên màn hình.</div>
+                    <div>1 lần mở app có thể tạo ra 5–10 confession views.</div>
                   </div>
                 </div>
                 <p className="text-4xl font-black">{metrics.views}</p>
@@ -655,7 +657,8 @@ const AdminScreen: React.FC = () => {
                   <p className="text-[12px] font-bold text-black/40 uppercase tracking-widest">Confession Submits</p>
                   <span className="text-[10px] text-black/30 cursor-help">ⓘ</span>
                   <div className="absolute bottom-full left-0 mb-2 hidden group-hover/tooltip:block bg-black text-white text-[13px] px-3 py-2 rounded-lg whitespace-nowrap z-[110] shadow-xl pointer-events-none font-normal tracking-normal">
-                    Submissions from {metricsDateFrom} to {metricsDateTo}.
+                    <div>Số confession được gửi và đăng thành công.</div>
+                    <div>Chỉ tính khi người dùng bấm submit và lưu vào hệ thống thành công.</div>
                   </div>
                 </div>
                 <p className="text-4xl font-black">{metrics.submits}</p>
