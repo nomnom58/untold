@@ -21,7 +21,7 @@ const MY_POSTS_IDS_KEY = 'untold_my_post_ids_v1';
 const GLOBAL_DB_KEY = 'untold_mock_db_v1';
 const SEEN_IDS_KEY = 'seen_confession_ids';
 const SEEN_IDS_V2_KEY = 'seen_confession_ids_v2';
-const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 const ANON_ID_KEY = 'untold_anon_id';
 const SESSION_ID_KEY = 'untold_session_id';
 
@@ -212,8 +212,8 @@ const Home: React.FC<{ onIndexChange?: (index: number) => void }> = ({ onIndexCh
       }
     } catch (e) { raw = []; }
     const now = Date.now();
-    const filtered = raw.filter(x => (now - x.seenAt) < SEVEN_DAYS_MS);
-    const final = filtered.sort((a, b) => b.seenAt - a.seenAt).slice(0, 500);
+    const filtered = raw.filter(x => (now - x.seenAt) < THIRTY_DAYS_MS);
+    const final = filtered.sort((a, b) => b.seenAt - a.seenAt).slice(0, 2000);
     localStorage.setItem(SEEN_IDS_V2_KEY, JSON.stringify(final));
     return final.map(x => x.id);
   };
@@ -229,7 +229,7 @@ const Home: React.FC<{ onIndexChange?: (index: number) => void }> = ({ onIndexCh
       let raw: { id: string, seenAt: number }[] = JSON.parse(localStorage.getItem(SEEN_IDS_V2_KEY) || '[]');
       if (!raw.some(x => x.id === id)) {
         raw.push({ id, seenAt: Date.now() });
-        const final = raw.slice(-500);
+        const final = raw.slice(-2000);
         localStorage.setItem(SEEN_IDS_V2_KEY, JSON.stringify(final));
       }
     } catch (e) {}
@@ -493,7 +493,7 @@ const Home: React.FC<{ onIndexChange?: (index: number) => void }> = ({ onIndexCh
           <div className="relative w-[550px] max-w-full bg-[#1A1A1A] h-[calc(100dvh-220px)] md:h-[70dvh] confession-card overflow-hidden flex flex-col justify-end p-[20px] mx-auto">
             <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent z-0" />
             <div className="relative z-10 space-y-2 mb-0">
-              {["One new topic every week", "Share 100% anonymously", "Your post disappears after 3 days"].map((text, i) => (
+              {["One new topic every week", "Share 100% anonymously", "Your post disappears after 7 days"].map((text, i) => (
                 <div key={i} className="flex items-center gap-2">
                   <div className="w-5 h-5 rounded-full bg-[#4CAF50] flex items-center justify-center shrink-0">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4"><polyline points="20 6 9 17 4 12"></polyline></svg>

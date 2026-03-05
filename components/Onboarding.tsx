@@ -37,7 +37,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
           {[
             "One new topic every week",
             "Share 100% anonymously",
-            "Your post disappears after 3 days"
+            "Your post disappears after 7 days"
           ].map((text, i) => (
             <div key={i} className="flex items-center gap-2">
               <div className="w-5 h-5 rounded-full bg-[#4CAF50] flex items-center justify-center shrink-0">
