@@ -212,10 +212,17 @@ const Home: React.FC<{ onIndexChange?: (index: number) => void }> = ({ onIndexCh
       }
     } catch (e) { raw = []; }
     const now = Date.now();
-    const filtered = raw.filter(x => (now - x.seenAt) < THIRTY_DAYS_MS);
-    const final = filtered.sort((a, b) => b.seenAt - a.seenAt).slice(0, 2000);
-    localStorage.setItem(SEEN_IDS_V2_KEY, JSON.stringify(final));
-    return final.map(x => x.id);
+    const valid: { id: string, seenAt: number }[] = [];
+    for (let i = 0; i < raw.length; i++) {
+      const x = raw[i];
+      if ((now - x.seenAt) < THIRTY_DAYS_MS) valid.push(x);
+    }
+    valid.sort((a, b) => b.seenAt - a.seenAt);
+    if (valid.length > 2000) valid.length = 2000;
+    localStorage.setItem(SEEN_IDS_V2_KEY, JSON.stringify(valid));
+    const ids = new Array<string>(valid.length);
+    for (let i = 0; i < valid.length; i++) ids[i] = valid[i].id;
+    return ids;
   };
 
   const saveToSeenV2 = (id: string, reason: string = 'unknown') => {
@@ -241,12 +248,19 @@ const Home: React.FC<{ onIndexChange?: (index: number) => void }> = ({ onIndexCh
     setIsFetching(true);
     try {
       const historicalSeenIds = getPrunedSeenIds();
-      const inSessionIds = confessions.map(c => c.id);
-      const allSeenIds = Array.from(new Set([
-        ...inSessionIds, 
-        ...historicalSeenIds,
-        ...Array.from(servedIdsRef.current)
-      ])).filter(isUUID);
+      const seenSet = new Set<string>();
+      for (let i = 0; i < confessions.length; i++) {
+        const id = confessions[i].id;
+        if (isUUID(id)) seenSet.add(id);
+      }
+      for (let i = 0; i < historicalSeenIds.length; i++) {
+        const id = historicalSeenIds[i];
+        if (isUUID(id)) seenSet.add(id);
+      }
+      servedIdsRef.current.forEach((id) => {
+        if (isUUID(id)) seenSet.add(id);
+      });
+      const allSeenIds = Array.from(seenSet);
       
       // DEV ONLY Tracking
       setLastSeenIds(allSeenIds);
@@ -336,13 +350,24 @@ const Home: React.FC<{ onIndexChange?: (index: number) => void }> = ({ onIndexCh
   // NEW: Effect to mark seen at VIEW-TIME
   useEffect(() => {
     const info = getCardType(swipe.currentIndex, activeTab, confessions, myConfessions, pinnedConfession);
+    let timeoutIdRef: { current: ReturnType<typeof setTimeout> | null } = { current: null };
+
     if (info?.kind === 'confession' && info.confession) {
       const id = info.confession.id;
       if (isUUID(id) && !alreadyMarkedViewedRef.current.has(id)) {
-        alreadyMarkedViewedRef.current.add(id);
-        saveToSeenV2(id, 'view');
+        timeoutIdRef.current = setTimeout(() => {
+          saveToSeenV2(id, 'view');
+          alreadyMarkedViewedRef.current.add(id);
+        }, 300);
       }
     }
+
+    return () => {
+      if (timeoutIdRef.current) {
+        clearTimeout(timeoutIdRef.current);
+        timeoutIdRef.current = null;
+      }
+    };
   }, [swipe.currentIndex, activeTab, confessions, myConfessions, pinnedConfession]);
 
   useEffect(() => {
