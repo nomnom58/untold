@@ -235,7 +235,7 @@ const Home: React.FC<{ onIndexChange?: (index: number) => void }> = ({ onIndexCh
     } catch (e) {}
   };
 
-  const fetchNextConfession = async (count: number = 1) => {
+  const fetchNextConfession = async (count: number = 9) => {
     if (isFetchingRef.current || activeTab !== 'home' || hasNoMore) return;
     isFetchingRef.current = true;
     setIsFetching(true);
@@ -350,9 +350,9 @@ const Home: React.FC<{ onIndexChange?: (index: number) => void }> = ({ onIndexCh
       const confessionsStartAt = 3;
       const currentIndexInList = swipe.currentIndex - confessionsStartAt;
       if (confessions.length === 0 && !isFetchingRef.current && !hasNoMore) {
-        fetchNextConfession(3);
-      } else if (currentIndexInList >= confessions.length - 1 && !isFetchingRef.current && !hasNoMore && confessions.length > 0) {
-        fetchNextConfession(1);
+        fetchNextConfession(9);
+      } else if (currentIndexInList >= confessions.length - 3 && !isFetchingRef.current && !hasNoMore && confessions.length > 0) {
+        fetchNextConfession(9);
       }
     }
   }, [swipe.currentIndex, confessions.length, activeTab, hasNoMore]);
