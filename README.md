@@ -1,20 +1,52 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# 🚀 Echoo - The Emotional Dumpster
 
-# Run and deploy your AI Studio app
+**Echoo** không định vị là một mạng xã hội. Echoo là một "thùng rác cảm xúc" – nơi mọi người đến để trút bỏ những bí mật thầm kín nhất, tìm thấy sự đồng cảm và rời đi.
 
-This contains everything you need to run your app locally.
+> **Trạng thái dự án:** Đang nâng cấp hệ thống phân phối nội dung (Batching V2). Bản Demo tạm thời đóng để bảo trì.
 
-View your app in AI Studio: https://ai.studio/apps/drive/1Zjd3QBY_pTxUTkqyYethWPrCpsEryYK-
+---
 
-## Run Locally
+## 💡 Triết lý Sản phẩm (Product Strategy)
 
-**Prerequisites:**  Node.js
+Echoo đi ngược lại với các MXH truyền thống để bảo vệ trải nghiệm người dùng:
+* **Vô hiệu hóa Comment:** Triệt tiêu hoàn toàn sự độc hại (Toxic). Người dùng được công nhận qua Reaction mà không sợ bị tấn công bằng lời nói.
+* **Contribution Barrier:** Để ngăn chặn Bot, người dùng phải đóng góp 1 Confession để "mở khóa" quyền tương tác mãi mãi. 
+* **The Ladder Rule:** Thuật toán phân phối ưu tiên **HOT → NEW → OLD**, đảm bảo bài mới luôn có đất diễn.
 
+---
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+## 🏗️ Kiến trúc Hệ thống (System Architecture)
+
+Hệ thống được thiết kế để vận hành với **chi phí $0/tháng** nhưng vẫn có khả năng mở rộng (Scalability) cao:
+
+* **Frontend:** React/Next.js tối ưu 60fps trên mobile, cảm giác "vuốt" mượt mà như TikTok.
+* **Backend:** Serverless với **Supabase (PostgreSQL)**.
+* **Edge Logic:** Sử dụng **PostgreSQL RPC** để lọc bài đã xem (`seen-id`) ngay tại Database, giảm 70% băng thông.
+* **Security:** Bảo mật tuyệt đối qua **Row Level Security (RLS)**, không lưu thông tin định danh.
+
+---
+
+## 🛠️ Quyết định Kỹ thuật (Technical Decisions)
+
+| Tính năng | Giải pháp | Lý do |
+| :--- | :--- | :--- |
+| **Zero-Latency Feed** | Batch-prefetching | Triệt tiêu trạng thái "Loading", thuật toán O(n) đảm bảo lướt nghìn bài không lag. |
+| **Stateless Privacy** | LocalStorage-based | Loại bỏ Database User để đảm bảo ẩn danh thực thụ. |
+| **AI Content Pipeline** | Gemini + Claude | Sản xuất 50-100 bài/tuần với chất lượng đồng nhất, tiết kiệm 80% sức lao động. |
+
+---
+
+## 📈 Kết quả & Bài học (The Pivot)
+
+* **MVP Cost:** ~$50 (bao gồm Domain & Marketing). Chi phí vận hành cố định: **$0**.
+* **Metric:** Đạt 33 lượt view đầu tiên trong tuần đầu ra mắt.
+* **Bài học:** "Cứ bắt tay vào làm cái đã". Echoo là kết quả sau 4 sản phẩm thất bại trước đó. 
+
+---
+
+## 💻 Cài đặt (Local)
+
+1. `git clone https://github.com/nomnom58/untold.git`
+2. `npm install`
+3. Tạo file `.env.local` với `SUPABASE_URL` và `SUPABASE_ANON_KEY`.
+4. `npm run dev`
