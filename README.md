@@ -1,59 +1,62 @@
 # 🚀 Echoo - The Emotional Dumpster
 
-**Echoo** không định vị là một mạng xã hội. Echoo là một "thùng rác cảm xúc" – nơi mọi người đến để trút bỏ những bí mật thầm kín nhất, tìm thấy sự đồng cảm và rời đi.
+**Echoo** is not a social network. It is an "emotional dumpster" — a safe haven where people come to offload their deepest secrets, find silent empathy, and move on.
 
-> **Trạng thái dự án:** Đang nâng cấp hệ thống phân phối nội dung (Batching V2). Bản Demo tạm thời đóng để bảo trì.
-
----
-
-## 💡 Triết lý Sản phẩm (Product Strategy)
-
-Echoo đi ngược lại với các MXH truyền thống để bảo vệ trải nghiệm người dùng:
-* **Vô hiệu hóa Comment:** Triệt tiêu hoàn toàn sự độc hại (Toxic). Người dùng được công nhận qua Reaction mà không sợ bị tấn công bằng lời nói.
-* **Contribution Barrier:** Để ngăn chặn Bot, người dùng phải đóng góp 1 Confession để "mở khóa" quyền tương tác mãi mãi. 
-* **The Ladder Rule:** Thuật toán phân phối ưu tiên **HOT → NEW → OLD**, đảm bảo bài mới luôn có đất diễn.
+> **Project Status:** Currently upgrading the distribution engine (**Batching V2**). Live Demo is temporarily in maintenance mode for database optimization.
 
 ---
 
-## 🏗️ Kiến trúc Hệ thống (System Architecture)
+## 💡 Product Philosophy (Strategy)
 
-Hệ thống được thiết kế để vận hành với **chi phí $0/tháng** nhưng vẫn có khả năng mở rộng (Scalability) cao:
-
-* **Frontend:** React/Next.js tối ưu 60fps trên mobile, cảm giác "vuốt" mượt mà như TikTok.
-* **Backend:** Serverless với **Supabase (PostgreSQL)**.
-* **Edge Logic:** Sử dụng **PostgreSQL RPC** để lọc bài đã xem (`seen-id`) ngay tại Database, giảm 70% băng thông.
-* **Security:** Bảo mật tuyệt đối qua **Row Level Security (RLS)**, không lưu thông tin định danh.
+Echoo challenges traditional social media norms to protect the user experience:
+* **Zero Comments:** Eliminates toxicity and drama at the source. Users receive validation through reactions without the fear of verbal attacks.
+* **Contribution Barrier:** To prevent bots and ensure community quality, users must post one confession to "unlock" the ability to react forever.
+* **The Ladder Rule:** A distribution algorithm that prioritizes **HOT (Engagement) → NEW (Freshness) → OLD**, ensuring new voices always have a stage while quality content remains visible.
 
 ---
 
-## 🛠️ Quyết định Kỹ thuật (Technical Decisions)
+## 🏗️ System Architecture
 
-| Tính năng | Giải pháp | Lý do |
+Designed for **$0/month operational cost** while maintaining high scalability:
+
+* **Frontend:** React/Next.js optimized for 60fps on mobile, delivering a "frictionless swipe" experience inspired by TikTok.
+* **Backend:** Serverless infrastructure powered by **Supabase (PostgreSQL)**.
+* **Edge Logic:** Leveraging **PostgreSQL RPC** (Remote Procedure Call) to handle "seen-id" filtering directly at the database level, reducing JSON payload by 70%.
+* **Security:** Bulletproof privacy via **Row Level Security (RLS)**; no personal identifiable information (PII) is ever stored.
+
+---
+
+## 🛠️ Technical Decisions
+
+| Feature | Solution | Rationale |
 | :--- | :--- | :--- |
-| **Zero-Latency Feed** | Batch-prefetching | Triệt tiêu trạng thái "Loading", thuật toán O(n) đảm bảo lướt nghìn bài không lag. |
-| **Stateless Privacy** | LocalStorage-based | Loại bỏ Database User để đảm bảo ẩn danh thực thụ. |
-| **AI Content Pipeline** | Gemini + Claude | Sản xuất 50-100 bài/tuần với chất lượng đồng nhất, tiết kiệm 80% sức lao động. |
+| **Zero-Latency Feed** | Batch-prefetching | Eliminates "Loading" states; $O(n)$ deduplication ensures a lag-free experience even after 1,000+ swipes. |
+| **Stateless Privacy** | LocalStorage-based ID | Decouples identity from the database to guarantee true anonymity. |
+| **AI Content Pipeline** | Gemini + Claude Workflow | Produces 50-100 high-quality, consistent posts per week, saving 80% of manual labor. |
 
 ---
 
-## 📈 Kết quả & Bài học (The Pivot)
+## 📈 Results & Lessons (The Pivot)
 
-* **MVP Cost:** ~$50 (bao gồm Domain & Marketing). Chi phí vận hành cố định: **$0**.
-* **Metric:** Đạt 33 lượt view đầu tiên trong tuần đầu ra mắt.
-* **Bài học:** "Cứ bắt tay vào làm cái đã". Echoo là kết quả sau 4 sản phẩm thất bại trước đó. 
+* **MVP Cost:** ~$50 (Domain & Initial Marketing). Fixed operational cost: **$0/month**.
+* **Metrics:** 33 organic views during the launch week.
+* **Lesson Learned:** "Just start doing it." Echoo is the result of four previous failed prototypes, each providing a vital stepping stone.
 
 ---
 
-### 🔍 Phân tích & Kế hoạch tiếp theo (The Pivot):
-* **Vấn đề:** Lượng Traffic còn thấp do rào cản về tâm lý ẩn danh và thiếu hụt Content Seeding.
-* **Giải pháp:** - Triển khai **AI-Assisted Content Pipeline** (Gemini/Claude) để duy trì 50-100 bài/tuần, đảm bảo Feed luôn "tươi mới".
-  - Thử nghiệm **Paid Traffic (A/B Testing)** với ngân sách tối ưu để tìm ra "điểm chạm" cảm xúc của User.
-  - Tối ưu hóa SEO cho các từ khóa "trút bỏ tâm sự", "ẩn danh".
+## 🔍 Challenges & Growth Roadmap
+
+* **The "Cold Start" Problem:** Low initial traffic due to the psychological barrier of anonymity and a need for more content seeding.
+* **Next Steps:**
+    * Scale the **AI-Assisted Content Pipeline** to maintain a "fresh" feed of 100+ posts/week.
+    * Deploy **A/B Testing** on paid traffic to identify user emotional "touchpoints."
+    * SEO optimization for keywords like "anonymous vent," "secret sharing," and "emotional relief."
+
 ---
 
-## 💻 Cài đặt (Local)
+## 💻 Local Setup
 
 1. `git clone https://github.com/nomnom58/untold.git`
 2. `npm install`
-3. Tạo file `.env.local` với `SUPABASE_URL` và `SUPABASE_ANON_KEY`.
+3. Create `.env.local` with your `SUPABASE_URL` and `SUPABASE_ANON_KEY`.
 4. `npm run dev`
