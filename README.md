@@ -44,6 +44,13 @@ Hệ thống được thiết kế để vận hành với **chi phí $0/tháng*
 
 ---
 
+### 🔍 Phân tích & Kế hoạch tiếp theo (The Pivot):
+* **Vấn đề:** Lượng Traffic còn thấp do rào cản về tâm lý ẩn danh và thiếu hụt Content Seeding.
+* **Giải pháp:** - Triển khai **AI-Assisted Content Pipeline** (Gemini/Claude) để duy trì 50-100 bài/tuần, đảm bảo Feed luôn "tươi mới".
+  - Thử nghiệm **Paid Traffic (A/B Testing)** với ngân sách tối ưu để tìm ra "điểm chạm" cảm xúc của User.
+  - Tối ưu hóa SEO cho các từ khóa "trút bỏ tâm sự", "ẩn danh".
+---
+
 ## 💻 Cài đặt (Local)
 
 1. `git clone https://github.com/nomnom58/untold.git`
