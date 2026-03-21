@@ -30,17 +30,17 @@ const WriteScreen: React.FC<WriteScreenProps> = ({ onPost }) => {
   const [showSuccess, setShowSuccess] = useState(false);
   const [lastPostedId, setLastPostedId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSafetyBlocked, setIsSafetyBlocked] = useState(false);
+  // const [isSafetyBlocked, setIsSafetyBlocked] = useState(false);
   const [receipt, setReceipt] = useState<any>(null);
   const [isTitleLimitReached, setIsTitleLimitReached] = useState(false);
   const [dismissTitleLimitWarning, setDismissTitleLimitWarning] = useState(false);
-  
+
   // Notice Popup State
   const [isNoticeOpen, setIsNoticeOpen] = useState(false);
   const [noticeTitle, setNoticeTitle] = useState('');
   const [noticeBody, setNoticeBody] = useState('');
   const [noticeCtaText, setNoticeCtaText] = useState('OK');
-  const [noticeOnCta, setNoticeOnCta] = useState<() => void>(() => () => {});
+  const [noticeOnCta, setNoticeOnCta] = useState<() => void>(() => () => { });
 
   const openNotice = (t: string, b: string, cta: string = 'OK', onCta?: () => void) => {
     setNoticeTitle(t);
@@ -49,7 +49,7 @@ const WriteScreen: React.FC<WriteScreenProps> = ({ onPost }) => {
     setNoticeOnCta(() => onCta || (() => setIsNoticeOpen(false)));
     setIsNoticeOpen(true);
   };
-  
+
   const titleRef = useRef<HTMLTextAreaElement>(null);
   const contentRef = useRef<HTMLTextAreaElement>(null);
   const navigate = useNavigate();
@@ -78,7 +78,7 @@ const WriteScreen: React.FC<WriteScreenProps> = ({ onPost }) => {
       setIsTitleLimitReached(true);
       const lines = title.split('\n');
       let newTitle = title;
-      
+
       if (lines.length > 4) {
         // Truncate based on newlines
         const clampedLines = lines.slice(0, 4);
@@ -98,7 +98,7 @@ const WriteScreen: React.FC<WriteScreenProps> = ({ onPost }) => {
       if (newTitle !== title) {
         setTitle(newTitle);
       }
-      
+
       el.style.height = 'auto';
       el.style.height = `${Math.min(el.scrollHeight, maxHeight)}px`;
     } else {
@@ -111,7 +111,7 @@ const WriteScreen: React.FC<WriteScreenProps> = ({ onPost }) => {
       } else if (linesCount >= 4 || looksClamped) {
         setIsTitleLimitReached(true);
       }
-      
+
       lastValidTitle.current = title;
       el.style.height = `${currentScrollHeight}px`;
     }
@@ -122,19 +122,19 @@ const WriteScreen: React.FC<WriteScreenProps> = ({ onPost }) => {
     if ((!title.trim() && !content.trim()) || isSubmitting) return;
 
     // 1. Safety Keyword Check
-    const text = `${title} ${content}`.toLowerCase();
-    const safetyKeywords = ["suicide", "kill myself", "self harm", "end my life", "want to die", "hurt myself"];
-    if (safetyKeywords.some(k => text.includes(k))) {
-      setIsSafetyBlocked(true);
-      logEvent('safety_blocked', { screen: "write" });
-      return;
-    }
+    // const text = `${title} ${content}`.toLowerCase();
+    // const safetyKeywords = ["suicide", "kill myself", "self harm", "end my life", "want to die", "hurt myself"];
+    // if (safetyKeywords.some(k => text.includes(k))) {
+    //   setIsSafetyBlocked(true);
+    //   logEvent('safety_blocked', { screen: "write" });
+    //   return;
+    // }
 
     // 2. Anti-Abuse Checks
     const isDevMode = localStorage.getItem('is_dev_mode') === 'true';
     if (!isDevMode) {
       const now = Date.now();
-      
+
       // Cooldown: 1 post / 15s
       const lastSubmitTs = Number(localStorage.getItem('abuse_last_submit_ts') || 0);
       if (now - lastSubmitTs < COOLDOWN_MS) {
@@ -150,9 +150,9 @@ const WriteScreen: React.FC<WriteScreenProps> = ({ onPost }) => {
       const validTimestamps = timestamps.filter(ts => now - ts < QUOTA_WINDOW_MS);
       if (validTimestamps.length >= QUOTA_LIMIT) {
         openNotice(
-          "Hold on", 
-          "You’ve reached today’s posting limit. Please try again tomorrow.", 
-          "Back to Home", 
+          "Hold on",
+          "You’ve reached today’s posting limit. Please try again tomorrow.",
+          "Back to Home",
           () => navigate('/')
         );
         return;
@@ -168,7 +168,7 @@ const WriteScreen: React.FC<WriteScreenProps> = ({ onPost }) => {
         }
       }
     }
-    
+
     setIsSubmitting(true);
     setReceipt(null); // Clear previous
 
@@ -186,9 +186,9 @@ const WriteScreen: React.FC<WriteScreenProps> = ({ onPost }) => {
 
       const { data: postData, error: postError } = await supabase
         .from('confessions')
-        .insert([{ 
+        .insert([{
           title: title.trim() || null,
-          body: content.trim() 
+          body: content.trim()
         }])
         .select()
         .single();
@@ -212,7 +212,7 @@ const WriteScreen: React.FC<WriteScreenProps> = ({ onPost }) => {
       let tsArr: number[] = [];
       try {
         tsArr = JSON.parse(localStorage.getItem('abuse_submit_timestamps') || '[]');
-      } catch (e) {}
+      } catch (e) { }
       const updatedTsArr = [...tsArr.filter(ts => now - ts < QUOTA_WINDOW_MS), now];
       localStorage.setItem('abuse_submit_timestamps', JSON.stringify(updatedTsArr));
       localStorage.setItem('abuse_last_body', content.trim());
@@ -224,14 +224,14 @@ const WriteScreen: React.FC<WriteScreenProps> = ({ onPost }) => {
         .select('id')
         .eq('id', postData.id)
         .single();
-      
+
       currentReceipt.db_confirm = confirmData ? "FOUND" : "NOT FOUND";
       setReceipt(currentReceipt);
 
       newId = postData.id;
       const isAdminSeed = localStorage.getItem(ADMIN_MODE_KEY) === '1';
-      logEvent('submit_confession', { 
-        confession_id: newId, 
+      logEvent('submit_confession', {
+        confession_id: newId,
         screen: "write",
         is_admin_seed: isAdminSeed
       });
@@ -251,7 +251,7 @@ const WriteScreen: React.FC<WriteScreenProps> = ({ onPost }) => {
           seenV2.push({ id: newId, seenAt: Date.now() });
           localStorage.setItem(SEEN_IDS_V2_KEY, JSON.stringify(seenV2));
         }
-      } catch (e) {}
+      } catch (e) { }
 
       const newConfession: Confession = {
         id: newId,
@@ -267,7 +267,7 @@ const WriteScreen: React.FC<WriteScreenProps> = ({ onPost }) => {
 
       const myIds = JSON.parse(localStorage.getItem(MY_POSTS_IDS_KEY) || '[]');
       localStorage.setItem(MY_POSTS_IDS_KEY, JSON.stringify([newId, ...myIds]));
-      
+
       setLastPostedId(newId);
       markAsPosted();
       onPost();
@@ -297,13 +297,13 @@ const WriteScreen: React.FC<WriteScreenProps> = ({ onPost }) => {
   return (
     <div className="w-full flex-1 flex flex-col items-center pt-[100px] px-2 md:px-0 justify-start animate-[fadeIn_0.3s_ease-out] overflow-hidden">
       {showSuccess && (
-        <SuccessPopup 
-          onClose={() => navigate('/')} 
-          onSeePost={() => navigate('/', { state: { focusId: lastPostedId } })} 
+        <SuccessPopup
+          onClose={() => navigate('/')}
+          onSeePost={() => navigate('/', { state: { focusId: lastPostedId } })}
         />
       )}
 
-      <NoticePopup 
+      <NoticePopup
         isOpen={isNoticeOpen}
         title={noticeTitle}
         body={noticeBody}
@@ -327,61 +327,41 @@ const WriteScreen: React.FC<WriteScreenProps> = ({ onPost }) => {
 
       <div className="w-full md:w-[550px] h-[calc(100dvh-220px)] md:h-[70dvh] max-w-full flex flex-col relative mx-auto confession-card">
         <div className="w-full flex-1 bg-white rounded-none border border-black/5 p-4 md:p-5 flex flex-col overflow-hidden mb-6">
-          {isSafetyBlocked ? (
-            <div className="flex-1 flex flex-col items-center justify-center text-center p-6 space-y-4">
-              <div className="w-12 h-12 rounded-full bg-[#E43630]/10 flex items-center justify-center text-[#E43630]">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-                  <line x1="12" y1="9" x2="12" y2="13"></line>
-                  <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                </svg>
-              </div>
-              <h3 className="text-[20px] font-bold text-black leading-tight">If you're feeling unsafe, please seek help.</h3>
-              <p className="text-[16px] text-black/50 leading-relaxed">
-                This space can't host content about self-harm. Please reach out to a support service or someone you trust.
-              </p>
-              <button 
-                onClick={() => setIsSafetyBlocked(false)}
-                className="mt-4 text-[#E43630] font-bold text-sm uppercase tracking-widest hover:underline"
-              >
-                Go back
-              </button>
-            </div>
-          ) : (
-            <>
-              <div className="flex flex-col mb-10">
-                <textarea 
-                  ref={titleRef}
-                  placeholder="Confession title"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  onKeyDown={handleTitleKeyDown}
-                  rows={1}
-                  disabled={isSubmitting}
-                  className={`w-full text-[20px] md:text-[24px] font-[500] border-none focus:ring-0 ${title.length > 0 ? 'text-[#373737]' : 'text-[#373737]/50'} placeholder:text-[#373737]/50 outline-none shrink-0 resize-none whitespace-pre-wrap break-words leading-[1.5] transition-[color] duration-200 overflow-hidden`}
-                />
-                {isTitleLimitReached && !dismissTitleLimitWarning && (
-                  <p className="text-[#F04438] text-[16px] font-medium mt-2">
-                    You’ve reached the title limit. Press Enter to start a new line.
-                  </p>
-                )}
-              </div>
-              
-              <textarea 
-                ref={contentRef}
-                required
-                placeholder="Enter your story"
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
+
+          <>
+            <div className="flex flex-col mb-10">
+              <textarea
+                ref={titleRef}
+                placeholder="Confession title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                onKeyDown={handleTitleKeyDown}
+                rows={1}
                 disabled={isSubmitting}
-                className={`w-full flex-1 text-[16px] md:text-[18px] font-[400] leading-[24px] ${content.length > 0 ? 'text-[#373737]' : 'text-[#373737]/50'} border-none focus:ring-0 placeholder:text-[#373737]/50 resize-none bg-transparent custom-scrollbar outline-none min-h-0 overflow-y-auto transition-colors duration-200`}
+                className={`w-full text-[20px] md:text-[24px] font-[500] border-none focus:ring-0 ${title.length > 0 ? 'text-[#373737]' : 'text-[#373737]/50'} placeholder:text-[#373737]/50 outline-none shrink-0 resize-none whitespace-pre-wrap break-words leading-[1.5] transition-[color] duration-200 overflow-hidden`}
               />
-            </>
-          )}
+              {isTitleLimitReached && !dismissTitleLimitWarning && (
+                <p className="text-[#F04438] text-[16px] font-medium mt-2">
+                  You’ve reached the title limit. Press Enter to start a new line.
+                </p>
+              )}
+            </div>
+
+            <textarea
+              ref={contentRef}
+              required
+              placeholder="Enter your story"
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              disabled={isSubmitting}
+              className={`w-full flex-1 text-[16px] md:text-[18px] font-[400] leading-[24px] ${content.length > 0 ? 'text-[#373737]' : 'text-[#373737]/50'} border-none focus:ring-0 placeholder:text-[#373737]/50 resize-none bg-transparent custom-scrollbar outline-none min-h-0 overflow-y-auto transition-colors duration-200`}
+            />
+          </>
+
         </div>
 
         <div className="w-full flex items-center gap-4 shrink-0 pb-2">
-          <button 
+          <button
             type="button"
             onClick={() => navigate('/')}
             disabled={isSubmitting}
@@ -389,16 +369,15 @@ const WriteScreen: React.FC<WriteScreenProps> = ({ onPost }) => {
           >
             Cancel
           </button>
-          
-          <button 
+
+          <button
             type="button"
             onClick={handleSubmit}
-            disabled={!isFilled || isSafetyBlocked}
-            className={`flex-1 py-4 rounded-[14px] font-medium text-[16px] transition-all active:scale-[0.98] outline-none ${
-              isFilled && !isSafetyBlocked
-              ? 'bg-white text-black shadow-xl' 
-              : 'bg-white/50 text-black/30 cursor-not-allowed'
-            }`}
+            disabled={!isFilled}
+            className={`flex-1 py-4 rounded-[14px] font-medium text-[16px] transition-all active:scale-[0.98] outline-none ${isFilled
+                ? 'bg-white text-black shadow-xl'
+                : 'bg-white/50 text-black/30 cursor-not-allowed'
+              }`}
           >
             {isSubmitting ? 'Sending...' : 'Send'}
           </button>
