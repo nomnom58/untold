@@ -33,6 +33,9 @@ interface CardInfo {
   confession?: Confession;
 }
 
+
+
+
 function getCardType(
   index: number,
   activeTab: TabType,
@@ -40,11 +43,12 @@ function getCardType(
   myConfessions: Confession[],
   pinnedConfession: Confession | null
 ): CardInfo | null {
+
   if (activeTab === 'home') {
     if (index === 0) return { kind: 'onboarding1' };
     if (index === 1) return { kind: 'onboarding2' };
     if (index === 2) return { kind: 'topic' };
-    
+
     let offset = 0;
     if (pinnedConfession) {
       if (index === 3) return { kind: 'confession', confession: pinnedConfession };
@@ -56,15 +60,18 @@ function getCardType(
       const item = confessions[listIndex];
       // Skip if it's the pinned one to avoid duplicates in the visual flow
       if (pinnedConfession && item.id === pinnedConfession.id) {
-         // Recursively get next or return null if end
-         return getCardType(index + 1, activeTab, confessions, myConfessions, pinnedConfession);
+        const nextListIndex = listIndex + 1;
+        if (nextListIndex < confessions.length) {
+          return { kind: 'confession', confession: confessions[nextListIndex] };
+        }
+        return { kind: 'end' };
       }
       return { kind: 'confession', confession: item };
     }
-    
+
     // Adjust end card index
-    const confessionsCount = pinnedConfession 
-      ? confessions.filter(c => c.id !== pinnedConfession.id).length 
+    const confessionsCount = pinnedConfession
+      ? confessions.filter(c => c.id !== pinnedConfession.id).length
       : confessions.length;
     if (index === 3 + (pinnedConfession ? 1 : 0) + confessionsCount) return { kind: 'end' };
   } else {
@@ -83,12 +90,12 @@ const Home: React.FC<{ onIndexChange?: (index: number) => void }> = ({ onIndexCh
   const location = useLocation();
   const navigate = useNavigate();
   const containerRef = useRef<HTMLDivElement>(null);
-  
+
   const [activeTab, setActiveTab] = useState<TabType>(() => {
     const state = location.state as any;
     return state?.activeTab || 'home';
   });
-  
+
   const [confessions, setConfessions] = useState<Confession[]>([]);
   const [myConfessions, setMyConfessions] = useState<Confession[]>([]);
   const [hasPosted, setHasPosted] = useState(() => localStorage.getItem(POSTED_KEY) === '1');
@@ -96,7 +103,7 @@ const Home: React.FC<{ onIndexChange?: (index: number) => void }> = ({ onIndexCh
   const isFetchingRef = useRef(false);
   const [hasNoMore, setHasNoMore] = useState(false);
   const [selectedConfession, setSelectedConfession] = useState<Confession | null>(null);
-  
+
   // session-only exclusion to prevent RPC returning duplicates of things already in buffer or served this session
   // tracks what we've already marked seen this specific component instance to avoid redundant saveToSeenV2 calls
   const servedIdsRef = useRef<Set<string>>(new Set());
@@ -111,9 +118,17 @@ const Home: React.FC<{ onIndexChange?: (index: number) => void }> = ({ onIndexCh
   const [markSeenReason, setMarkSeenReason] = useState<string | null>(null);
   const [batchFallbackCount, setBatchFallbackCount] = useState(0);
   const [lastBatchErrorMsg, setLastBatchErrorMsg] = useState<string | null>(null);
-  
+
+
+
+
+
   // States for focused/pinned post behavior
-  const [pinnedConfession, setPinnedConfession] = useState<Confession | null>(null);
+  const [pinnedConfession, setPinnedConfessionRaw] = useState<Confession | null>(null);
+  const setPinnedConfession = (val: Confession | null) => {
+    console.trace('setPinnedConfession called with:', val?.id || null);
+    setPinnedConfessionRaw(val);
+  };
   const [highlightId, setHighlightId] = useState<string | null>(null);
 
   // METRICS: Ref to track already logged confessions in this session
@@ -122,8 +137,8 @@ const Home: React.FC<{ onIndexChange?: (index: number) => void }> = ({ onIndexCh
 
   const totalCards = useMemo(() => {
     if (activeTab === 'home') {
-      const confessionsCount = pinnedConfession 
-        ? confessions.filter(c => c.id !== pinnedConfession.id).length 
+      const confessionsCount = pinnedConfession
+        ? confessions.filter(c => c.id !== pinnedConfession.id).length
         : confessions.length;
       return 3 + (pinnedConfession ? 1 : 0) + confessionsCount + 1;
     }
@@ -136,8 +151,8 @@ const Home: React.FC<{ onIndexChange?: (index: number) => void }> = ({ onIndexCh
     return localStorage.getItem(ONBOARDING_KEY) === '1' ? 2 : 0;
   }, []);
 
-  const swipe = useSwipeStage({ 
-    totalCards, 
+  const swipe = useSwipeStage({
+    totalCards,
     initialIndex
   });
 
@@ -156,7 +171,7 @@ const Home: React.FC<{ onIndexChange?: (index: number) => void }> = ({ onIndexCh
         logEvent('view_confession', { confession_id: cid, screen: "home", tab: activeTab });
       }
     }
-  }, [swipe.currentIndex, activeTab, confessions, myConfessions, pinnedConfession]);
+  }, [swipe.currentIndex, activeTab, confessions.length, myConfessions.length, pinnedConfession]);
 
   // METRICS: Log read_depth on session end (unload or unmount)
   useEffect(() => {
@@ -196,7 +211,7 @@ const Home: React.FC<{ onIndexChange?: (index: number) => void }> = ({ onIndexCh
     } else if (swipe.currentIndex < 0) {
       swipe.setCurrentIndex(0);
     }
-  }, [totalCards, activeTab, swipe.currentIndex]);
+  }, [totalCards, activeTab]);
 
   const isUUID = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id) || id.length > 20;
 
@@ -239,7 +254,7 @@ const Home: React.FC<{ onIndexChange?: (index: number) => void }> = ({ onIndexCh
         const final = raw.slice(-2000);
         localStorage.setItem(SEEN_IDS_V2_KEY, JSON.stringify(final));
       }
-    } catch (e) {}
+    } catch (e) { }
   };
 
   const fetchNextConfession = async (count: number = 9) => {
@@ -261,15 +276,15 @@ const Home: React.FC<{ onIndexChange?: (index: number) => void }> = ({ onIndexCh
         if (isUUID(id)) seenSet.add(id);
       });
       const allSeenIds = Array.from(seenSet);
-      
+
       // DEV ONLY Tracking
       setLastSeenIds(allSeenIds);
 
       let dataToProcess: any[] = [];
-      
+
       // Step 1: Try Batch RPC
       const { data: batchData, error: batchError } = await supabase.rpc('get_confession_batch_v2', { seen_ids: allSeenIds });
-      
+
       if (!batchError && Array.isArray(batchData) && batchData.length > 0) {
         dataToProcess = batchData;
         // Reset fallback stats on successful batch
@@ -281,7 +296,7 @@ const Home: React.FC<{ onIndexChange?: (index: number) => void }> = ({ onIndexCh
         let errorMsg = "Non-array result";
         if (batchError) errorMsg = batchError.message;
         else if (!batchData || (Array.isArray(batchData) && batchData.length === 0)) errorMsg = "Empty Array";
-        
+
         const nextCount = batchFallbackCount + 1;
         setBatchFallbackCount(nextCount);
         setLastBatchErrorMsg(errorMsg);
@@ -307,7 +322,7 @@ const Home: React.FC<{ onIndexChange?: (index: number) => void }> = ({ onIndexCh
           return;
         }
       }
-      
+
       if (dataToProcess.length > 0) {
         const newBatch: Confession[] = dataToProcess.map((result: any) => {
           // SESSION-ONLY tracking so subsequent RPC calls don't repeat this item
@@ -319,7 +334,7 @@ const Home: React.FC<{ onIndexChange?: (index: number) => void }> = ({ onIndexCh
             setReturnedWasAlreadySeen(allSeenIds.includes(result.id));
             setLastRpcSource(result.source || 'unknown');
           }
-          
+
           return {
             id: result.id,
             title: result.title || undefined,
@@ -335,6 +350,7 @@ const Home: React.FC<{ onIndexChange?: (index: number) => void }> = ({ onIndexCh
           // SAFEGUARD: Deduplicate to prevent identical cards if same IDs are returned
           const existingIds = new Set(prev.map(c => c.id));
           const uniqueNewItems = newBatch.filter(c => !existingIds.has(c.id));
+          if (uniqueNewItems.length === 0) return prev; // ← no new items, return same reference
           return [...prev, ...uniqueNewItems];
         });
       }
@@ -368,7 +384,7 @@ const Home: React.FC<{ onIndexChange?: (index: number) => void }> = ({ onIndexCh
         timeoutIdRef.current = null;
       }
     };
-  }, [swipe.currentIndex, activeTab, confessions, myConfessions, pinnedConfession]);
+  }, [swipe.currentIndex, activeTab, confessions.length, myConfessions.length, pinnedConfession]);
 
   useEffect(() => {
     if (activeTab === 'home') {
@@ -423,7 +439,7 @@ const Home: React.FC<{ onIndexChange?: (index: number) => void }> = ({ onIndexCh
       if (selectedConfession) {
         console.error('[GUARD] focus flow must not open modal');
       }
-      setSelectedConfession(null); 
+      setSelectedConfession(null);
 
       // 3. Pin and Set Index
       if (targetInMy) {
@@ -460,6 +476,7 @@ const Home: React.FC<{ onIndexChange?: (index: number) => void }> = ({ onIndexCh
       swipe.setCurrentIndex(startIdx);
       navigate(location.pathname, { replace: true, state: {} });
     } else if (state?.focusId) {
+      navigate(location.pathname, { replace: true, state: {} }); // consume immediately
       handleFocusToHomePost(state.focusId);
     }
   }, [location.state, confessions, myConfessions, handleFocusToHomePost]);
@@ -490,7 +507,7 @@ const Home: React.FC<{ onIndexChange?: (index: number) => void }> = ({ onIndexCh
 
   const renderStageCard = (index: number, yOffset: number, zIndex: number) => {
     let cardInfo = getCardType(index, activeTab, confessions, myConfessions, pinnedConfession);
-    
+
     // Safety Fix: If the active index is out of bounds (race condition), fallback to the nearest valid card (usually 'end')
     if (!cardInfo && index === swipe.currentIndex) {
       const safeIndex = Math.max(0, Math.min(index, totalCards - 1));
@@ -500,7 +517,7 @@ const Home: React.FC<{ onIndexChange?: (index: number) => void }> = ({ onIndexCh
     if (!cardInfo) return null;
 
     let id = `${activeTab}-${cardInfo.kind}-${index}`;
-    if (cardInfo.confession) id = cardInfo.confession.id;
+    if (cardInfo.confession) id = `${cardInfo.confession.id}-${index}`;
 
     let content = null;
     switch (cardInfo.kind) {
@@ -537,15 +554,15 @@ const Home: React.FC<{ onIndexChange?: (index: number) => void }> = ({ onIndexCh
       case 'confession':
         const isHighlighted = cardInfo.confession?.id === highlightId;
         content = cardInfo.confession ? (
-          <div 
+          <div
             id={`confession-${cardInfo.confession.id}`}
             className={`transition-all duration-700 w-full h-full flex items-center justify-center ${isHighlighted ? 'ring-4 ring-white/50 ring-offset-8 ring-offset-transparent rounded-2xl z-[50]' : ''}`}
           >
-            <ConfessionCard 
-              confession={cardInfo.confession} 
-              onExpandedScrollLockChange={swipe.setInnerScrollLock} 
-              onEdgeDragDelta={swipe.handleEdgeDragDelta} 
-              onEdgeDragEnd={swipe.handleEdgeDragEnd} 
+            <ConfessionCard
+              confession={cardInfo.confession}
+              onExpandedScrollLockChange={swipe.setInnerScrollLock}
+              onEdgeDragDelta={swipe.handleEdgeDragDelta}
+              onEdgeDragEnd={swipe.handleEdgeDragEnd}
             />
           </div>
         ) : null;
@@ -562,18 +579,18 @@ const Home: React.FC<{ onIndexChange?: (index: number) => void }> = ({ onIndexCh
       case 'empty':
         content = (
           <div className="bg-white rounded-none p-4 md:p-5 text-center w-[550px] max-w-full shadow-2xl flex flex-col items-center justify-center mx-auto h-[calc(100dvh-220px)] md:h-[70dvh] confession-card">
-             <h3 className="text-2xl font-bold text-black mb-4">You haven’t shared a story yet.</h3>
-             <button onClick={() => navigate('/write')} className="bg-black text-white px-8 py-3 rounded-full font-bold shadow-xl write-confession-btn">Share your story</button>
+            <h3 className="text-2xl font-bold text-black mb-4">You haven’t shared a story yet.</h3>
+            <button onClick={() => navigate('/write')} className="bg-black text-white px-8 py-3 rounded-full font-bold shadow-xl write-confession-btn">Share your story</button>
           </div>
         );
         break;
     }
 
     return (
-      <div 
+      <div
         key={id}
         className={`absolute inset-0 flex items-center justify-center pointer-events-none px-2 md:px-0 ${swipe.isTransitioning ? 'transition-transform' : ''}`}
-        style={{ 
+        style={{
           transform: `translateY(${yOffset}px)`,
           transitionDuration: swipe.isTransitioning ? `${TRANSITION_MS}ms` : '0ms',
           zIndex: zIndex,
@@ -593,7 +610,7 @@ const Home: React.FC<{ onIndexChange?: (index: number) => void }> = ({ onIndexCh
   const currentCardId = useMemo(() => {
     const info = getCardType(swipe.currentIndex, activeTab, confessions, myConfessions, pinnedConfession);
     return info?.kind === 'confession' ? info.confession?.id || null : null;
-  }, [swipe.currentIndex, activeTab, confessions, myConfessions, pinnedConfession]);
+  }, [swipe.currentIndex, activeTab, confessions.length, myConfessions.length, pinnedConfession]);
 
   const currentInLastSeen = useMemo(() => {
     return currentCardId ? lastSeenIds.includes(currentCardId) : false;
@@ -630,11 +647,11 @@ currentInLastSeen: ${currentInLastSeen}
   }, [confessions.length, hasNoMore, isFetching, lastSeenIds, lastRpcReturnedId, lastRpcSource, returnedWasAlreadySeen, lastMarkedSeenId, markSeenReason, currentCardId, currentInLastSeen, batchFallbackCount, lastBatchErrorMsg]);
 
   return (
-    <div 
+    <div
       ref={containerRef}
-      className="w-full h-full relative flex items-center justify-center overflow-hidden" 
-      onTouchStart={swipe.onTouchStart} 
-      onTouchMove={swipe.onTouchMove} 
+      className="w-full h-full relative flex items-center justify-center overflow-hidden"
+      onTouchStart={swipe.onTouchStart}
+      onTouchMove={swipe.onTouchMove}
       onTouchEnd={swipe.onTouchEnd}
     >
       {localStorage.getItem('is_dev_mode') === 'true' && (
@@ -648,7 +665,7 @@ currentInLastSeen: ${currentInLastSeen}
               {`buffer: ${confessions.length}\nnoMore: ${hasNoMore}\nfetching: ${isFetching}\n\nseenCount: ${lastSeenIds.length}\nlastRpcId: ${lastRpcReturnedId?.slice(0, 8) || 'none'}\nsource: ${lastRpcSource || 'none'}\nwasAlreadySeen: ${returnedWasAlreadySeen}\n\nfallback: ${batchFallbackCount > 0}\nfallbackCount: ${batchFallbackCount}\nlastBatchErrorMsg: ${lastBatchErrorMsg || 'none'}\n\nlastMarkedSeen: ${lastMarkedSeenId?.slice(0, 8) || 'none'}\nmarkReason: ${markSeenReason || 'none'}\n\ncardId: ${currentCardId?.slice(0, 8) || 'none'}\ncardInSeen: ${currentInLastSeen}`}
             </pre>
           </div>
-          <button 
+          <button
             onClick={handleDevReset}
             className="fixed bottom-4 left-4 z-[99999] bg-black/40 text-white/70 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-black/60 hover:text-white transition-all pointer-events-auto border border-white/10"
           >
@@ -681,13 +698,13 @@ currentInLastSeen: ${currentInLastSeen}
           )}
         </div>
       </div>
-      
+
       <div className="md:hidden absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black to-transparent pointer-events-none z-[45]" />
 
       {selectedConfession && (
-        <FullReadingModal 
-          confession={selectedConfession} 
-          onClose={() => setSelectedConfession(null)} 
+        <FullReadingModal
+          confession={selectedConfession}
+          onClose={() => setSelectedConfession(null)}
         />
       )}
     </div>

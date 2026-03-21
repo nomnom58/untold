@@ -20,9 +20,9 @@ export function useSwipeStage({
 }: SwipeStageParams) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [dragY, setDragY] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
+  const isDraggingRef = useRef(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const [touchStartY, setTouchStartY] = useState<number | null>(null);
+  const touchStartYRef = useRef<number | null>(null);
   const [innerScrollLock, setInnerScrollLock] = useState(false);
 
   // Persistence Refs to keep callbacks stable
@@ -106,6 +106,7 @@ export function useSwipeStage({
       setDragY(0);
       setIsTransitioning(false);
       stateRef.current.isTransitioning = false;
+      wheelDragAcc.current = 0; // ← ADD THIS LINE
     }, TRANSITION_MS);
     nudgeTimers.current.push(timer);
   }, []);
@@ -184,7 +185,7 @@ export function useSwipeStage({
     wheelDragAcc.current = 0;
   }, [requestSwipe]);
 
-  const onWheelCapture = (e: React.WheelEvent) => {
+  const onWheelCapture = useCallback((e: React.WheelEvent) => {
     const { isTransitioning, innerScrollLock, currentIndex, totalCards } = stateRef.current;
     
     // LOG WHEEL ATTEMPT
@@ -197,11 +198,13 @@ export function useSwipeStage({
     });
 
     if (innerScrollLock) return;
-    
-    // We REMOVED the isTransitioning early return here.
-    // This ensures that even if we are in a "boundary nudge" state, 
-    // wheel events are still captured and accumulated.
-    // The commitTransition function still protects against double transitions.
+
+    // Block accumulation while a transition is in progress.
+    // e.preventDefault() is still called to prevent page scroll.
+    if (isTransitioning) {
+      e.preventDefault();
+      return;
+    }
 
     e.preventDefault();
     if (wheelTimer.current) window.clearTimeout(wheelTimer.current);
@@ -210,24 +213,27 @@ export function useSwipeStage({
       handleEdgeDragEnd();
       wheelTimer.current = null;
     }, WHEEL_DEBOUNCE_MS);
-  };
+  }, [handleEdgeDragDelta, handleEdgeDragEnd]);
 
-  const onTouchStart = (e: React.TouchEvent) => {
+  const onTouchStart = useCallback((e: React.TouchEvent) => {
+    const { isTransitioning, innerScrollLock } = stateRef.current;
     if (isTransitioning || innerScrollLock) return;
-    setTouchStartY(e.touches[0].clientY);
-    setIsDragging(true);
-  };
+    touchStartYRef.current = e.touches[0].clientY;
+    isDraggingRef.current = true;
+  }, []);
 
-  const onTouchMove = (e: React.TouchEvent) => {
-    if (!isDragging || touchStartY === null || isTransitioning || innerScrollLock) return;
+  const onTouchMove = useCallback((e: React.TouchEvent) => {
+    const { isTransitioning, innerScrollLock } = stateRef.current;
+    if (!isDraggingRef.current || touchStartYRef.current === null || isTransitioning || innerScrollLock) return;
     const currentY = e.touches[0].clientY;
-    const deltaY = currentY - touchStartY;
+    const deltaY = currentY - touchStartYRef.current;
     setDragY(deltaY);
-  };
+  }, []);
 
-  const onTouchEnd = () => {
-    if (!isDragging || isTransitioning || innerScrollLock) return;
-    setIsDragging(false);
+  const onTouchEnd = useCallback(() => {
+    const { isTransitioning, innerScrollLock, dragY } = stateRef.current;
+    if (!isDraggingRef.current || isTransitioning || innerScrollLock) return;
+    isDraggingRef.current = false;
     
     const viewportHeight = window.innerHeight;
     const activeThreshold = innerScrollLock ? SNAP_THRESHOLD_EXPANDED_EDGE : SNAP_THRESHOLD_COLLAPSED;
@@ -249,10 +255,10 @@ export function useSwipeStage({
       }, TRANSITION_MS);
       nudgeTimers.current.push(timer);
     }
-    setTouchStartY(null);
-  };
+    touchStartYRef.current = null;
+  }, [requestSwipe]);
 
-  return {
+  return React.useMemo(() => ({
     currentIndex,
     setCurrentIndex,
     dragY,
@@ -267,5 +273,10 @@ export function useSwipeStage({
     onTouchStart,
     onTouchMove,
     onTouchEnd
-  };
+  }), [
+    currentIndex, setCurrentIndex, dragY, isTransitioning, 
+    innerScrollLock, setInnerScrollLock, requestSwipe, 
+    handleEdgeDragDelta, handleEdgeDragEnd, onWheelCapture, 
+    onTouchStart, onTouchMove, onTouchEnd
+  ]);
 }

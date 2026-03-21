@@ -142,7 +142,7 @@ const ConfessionCard: React.FC<ConfessionCardProps> = React.memo(({
     };
 
     el.addEventListener('wheel', handleNativeWheel, { passive: false });
-    return () => el.addEventListener('wheel', handleNativeWheel);
+    return () => el.removeEventListener('wheel', handleNativeWheel);
   }, [isExpanded, onEdgeDragDelta, onEdgeDragEnd]);
 
   /**
