@@ -1,36 +1,37 @@
 import { createClient } from '@supabase/supabase-js';
 
 const getEnv = (key: string) => {
+  // Try Vite's import.meta.env first (Standard for Vite)
+  if (typeof import.meta !== 'undefined' && import.meta.env) {
+    const val = (import.meta.env as any)[key];
+    if (val !== undefined) return val;
+  }
+  // Fallback to process.env for Node/CI environments
   if (typeof process !== 'undefined' && process.env) {
     return (process.env as any)[key];
   }
   return undefined;
 };
 
-const envUrl = getEnv('NEXT_PUBLIC_SUPABASE_URL');
-const envKey = getEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY');
-const nodeEnv = getEnv('NODE_ENV');
+const envUrl = getEnv('NEXT_PUBLIC_SUPABASE_URL') || getEnv('VITE_SUPABASE_URL');
+const envKey = getEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY') || getEnv('VITE_SUPABASE_ANON_KEY');
+const nodeEnv = getEnv('NODE_ENV') || (import.meta.env?.MODE);
 const isProd = nodeEnv === 'production';
-
-// Hardcoded fallback values for development/AI Studio preview
-const FALLBACK_URL = 'https://ydtrzmpjcfyvuukyfzby.supabase.co';
-const FALLBACK_KEY = 'sb_publishable_V_E6XVg7QSJcWa0mDdPm1w_DI5s5Ixp';
 
 let supabaseUrl = envUrl;
 let supabaseKey = envKey;
 
-// Check for missing or placeholder 'undefined' strings sometimes injected by poorly configured environments
+// Critical Error Handling: No more silent fallbacks to old/revoked keys
 if (!supabaseUrl || !supabaseKey || supabaseUrl === 'undefined' || supabaseKey === 'undefined') {
+  const errorMsg = "MISSING SUPABASE CREDENTIALS. Please check your .env.local or Vercel Environment Variables.";
   if (isProd) {
-    throw new Error("Missing Supabase env in production");
+    throw new Error(errorMsg);
   } else {
-    console.warn("SUPABASE FALLBACK ACTIVE (DEV ONLY) — remove before export/deploy");
-    supabaseUrl = FALLBACK_URL;
-    supabaseKey = FALLBACK_KEY;
+    console.error(`[Supabase Error] ${errorMsg}`);
   }
 }
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
+export const supabase = createClient(supabaseUrl || '', supabaseKey || '');
 
 /**
  * Centralized event tracking with Dev Mode protection.
